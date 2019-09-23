@@ -62,6 +62,8 @@ class h5p {
         42  => "H5P.FindTheWords"
     ];
 
+    private static $packagespath = '/mod/hvp/packages';
+
     private $editor;
     private $core;
     private $storage;
@@ -72,6 +74,48 @@ class h5p {
         $this->editor = \mod_hvp\framework::instance('editor');
         $this->core = $this->editor->ajax->core;
         $this->storage = $this->editor->ajax->storage;
+    }
+
+    public static function uploadPackages() {
+        mtrace("Installation de modules complémentaires...");
+
+        global $CFG;
+        $modules = array_filter(scandir($CFG->dirroot . DIRECTORY_SEPARATOR . self::$packagespath), function ($element) {
+            return (in_array(substr($element, 0, 1), ['.', '_'])) ? false : true;
+        });
+
+        $interface = \mod_hvp\framework::instance('interface');
+        $h5pvalidator = \mod_hvp\framework::instance('validator');
+        $h5pstorage = \mod_hvp\framework::instance('storage');
+        $h5pstorage->h5pC->mayUpdateLibraries(true);
+
+        $total = count($modules);
+        foreach ($modules as $number => $module) {
+            mtrace("Module " . $module . " (" . $number . "/" . $total . ")", " ");
+
+            $path = $CFG->tempdir . uniqid('/hvp-');
+            $interface->getUploadedH5pFolderPath($path);
+            $path .= '.h5p';
+            $interface->getUploadedH5pPath($path);
+            copy($CFG->dirroot . DIRECTORY_SEPARATOR . self::$packagespath . DIRECTORY_SEPARATOR . $module, $path);
+
+            if(!$h5pvalidator->isValidPackage(true)) {
+                mtrace('INVALID_PACKAGE');
+            } else {
+                $h5pstorage->savePackage(null, null, true);
+                $infos = \mod_hvp\framework::messages('info');
+                $errors = \mod_hvp\framework::messages('error');
+                foreach ($infos as $txt) {
+                    mtrace($txt, ' ');
+                }
+                foreach ($errors as $txt) {
+                    mtrace($txt, ' ');
+                }
+                if (!count($infos) && !count($errors)) {
+                    mtrace("NOTHING_TO_DO");
+                }
+            }
+        }
     }
 
     public function updateAllModules() {
