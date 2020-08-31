@@ -59,7 +59,8 @@ class h5p {
         39  => "H5P.Dictation",
         40  => "H5P.BranchingScenario",
         41  => "H5P.ThreeImage",
-        42  => "H5P.FindTheWords"
+        42  => "H5P.FindTheWords",
+        43  => "H5P.InteractiveBook"
     ];
 
     private static $packagespath = '/mod/hvp/packages';
